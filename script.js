@@ -1,4 +1,3 @@
-// Wait for the DOM to be fully loaded before running the script
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- DOM ELEMENT SELECTION ---
@@ -114,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${item.ticker}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${item.quantity}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">R$ ${item.averagePrice.toFixed(2)}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">R$ ${item.currentPrice !== 'N/A' ? item.currentPrice.toFixed(2) : 'N/A'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">R$ ${typeof item.currentPrice === 'number' ? item.currentPrice.toFixed(2) : 'N/A'}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">R$ ${item.currentValue.toFixed(2)}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm ${item.unrealizedProfitLoss >= 0 ? 'text-green-600' : 'text-red-600'}">
                     R$ ${item.unrealizedProfitLoss.toFixed(2)}
@@ -313,7 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * Handles the submission of the new operation form.
      * @param {Event} e - The form submission event.
      */
-    const handleFormSubmit = (e) => {
+    const handleFormSubmit = async (e) => {
         e.preventDefault();
 
         const type = opTypeSelect.value;
@@ -349,7 +348,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         saveDataToLocalStorage();
-        updateAllQuotes().then(render); // Update quotes and re-render
+        await updateAllQuotes(); // Wait for quotes to update
+        render(); // Re-render with new data
         operationForm.reset();
         toggleFormFields(); // Reset form fields visibility
     };
@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * Handles click events for delete buttons.
      * @param {Event} e - The click event.
      */
-    const handleDeleteClick = (e) => {
+    const handleDeleteClick = async (e) => {
         if (e.target.classList.contains('delete-btn')) {
             const id = e.target.dataset.id;
             const type = e.target.dataset.type;
@@ -370,7 +370,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     proventos = proventos.filter(prov => prov.id !== id);
                 }
                 saveDataToLocalStorage();
-                updateAllQuotes().then(render); // Update quotes and re-render
+                await updateAllQuotes();
+                render();
                 showMessage('Registro excluído com sucesso!');
             }
         }
@@ -404,43 +405,62 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.addEventListener('click', handleDeleteClick);
 
 
-    // --- SIMULATED STOCK QUOTES ---
+    // --- REAL-TIME STOCK QUOTES API (Brapi) ---
 
     /**
-     * Simulates fetching a stock quote from an API.
-     * @param {string} tickerSymbol - The ticker symbol (e.g., 'PETR4').
-     * @returns {Promise<number>} A promise that resolves to a simulated price.
-     */
-    const fetchStockQuote = (tickerSymbol) => {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                // Simulate a price between 20 and 100 for demonstration
-                const simulatedPrice = (Math.random() * 80) + 20;
-                resolve(parseFloat(simulatedPrice.toFixed(2)));
-            }, 300); // Simulate small network delay
-        });
-    };
-
-    /**
-     * Fetches quotes for all unique tickers in the portfolio.
+     * Fetches quotes for all unique tickers in the portfolio using the Brapi API.
+     * This function is more efficient as it fetches all tickers in a single network request.
      */
     const updateAllQuotes = async () => {
-        const uniqueTickers = new Set(operations.map(op => op.ticker));
-        const newQuotes = {};
+        let uniqueTickers = [...new Set(operations.map(op => op.ticker))];
         
-        // Use Promise.all for concurrent fetching
-        const quotePromises = Array.from(uniqueTickers).map(async (ticker) => {
-            try {
-                const price = await fetchStockQuote(ticker);
-                newQuotes[ticker] = price;
-            } catch (error) {
-                console.error(`Erro ao buscar cotação para ${ticker}:`, error);
-                newQuotes[ticker] = 'N/A';
-            }
-        });
+        // If there are no tickers from user operations, add a default one for easy testing.
+        if (uniqueTickers.length === 0) {
+            uniqueTickers.push('PETR4');
+        }
 
-        await Promise.all(quotePromises);
-        currentQuotes = newQuotes;
+        const tickersString = uniqueTickers.join(',');
+        const apiUrl = `https://brapi.dev/api/quote/${tickersString}`;
+        const apiToken = 'nvBx6ymHWPWmFJ3BQue1sM'; // Token from your curl example
+
+        // Log the URL to the console for testing purposes.
+        console.log("Chamando API com a URL:", apiUrl);
+
+        try {
+            // Add the Authorization header to the fetch request as requested
+            const response = await fetch(apiUrl, {
+                headers: {
+                    'Authorization': `Bearer ${apiToken}`
+                }
+            });
+
+            if (!response.ok) {
+                 // Check for specific auth errors, which often return 401
+                if (response.status === 401) {
+                    throw new Error('Token de autorização da API é inválido ou expirou.');
+                }
+                throw new Error('A resposta da rede não foi OK');
+            }
+            
+            const data = await response.json();
+            
+            const newQuotes = {};
+            if (data.results) {
+                data.results.forEach(quote => {
+                    if (quote.regularMarketPrice) {
+                        newQuotes[quote.symbol] = quote.regularMarketPrice;
+                    }
+                });
+            } else if (data.message) { // Handle API-specific error messages
+                console.error("Erro da API Brapi:", data.message);
+                showMessage(`Erro da API: ${data.message}`, 'error', 'Erro de API');
+            }
+            currentQuotes = newQuotes;
+
+        } catch (error) {
+            console.error("Erro ao buscar cotações na API Brapi:", error);
+            showMessage(error.message, 'error', 'Erro de API');
+        }
     };
 
 
@@ -455,11 +475,12 @@ document.addEventListener('DOMContentLoaded', () => {
         await updateAllQuotes();
         render();
 
-        // Refresh quotes every minute
+        // Refresh quotes every 5 minutes (300000 milliseconds)
         setInterval(async () => {
+            console.log("Atualizando cotações...");
             await updateAllQuotes();
             render();
-        }, 60000);
+        }, 30000);
     };
 
     // Start the app!
