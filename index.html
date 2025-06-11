@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyStockTrack - Controle de Ações</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for better aesthetics -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- Message Box Modal -->
+        <div id="message-box-overlay" class="message-box-overlay hidden"></div>
+        <div id="message-box" class="message-box hidden">
+            <h3 id="message-box-title" class="text-xl font-bold mb-3"></h3>
+            <p id="message-box-content" class="text-gray-700 mb-4"></p>
+            <button id="message-box-close" class="w-full py-2 px-4 rounded-md font-semibold text-white transition-all duration-200">
+                Fechar
+            </button>
+        </div>
+
+        <h1 class="text-4xl font-bold text-center text-blue-700 mb-8 rounded-lg p-2 bg-blue-100 shadow-md">
+            MyStockTrack - Controle de Ações
+        </h1>
+
+        <!-- Registration Form -->
+        <div class="bg-white p-6 rounded-lg shadow-xl mb-8">
+            <h2 class="text-2xl font-semibold text-blue-600 mb-4">Registrar Nova Operação</h2>
+            <form id="operation-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                    <label for="opType" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Operação</label>
+                    <select id="opType" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="Compra">Compra</option>
+                        <option value="Venda">Venda</option>
+                        <option value="Dividendo">Dividendo/Provento</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="ticker" class="block text-sm font-medium text-gray-700 mb-1">Ticker (Ex: PETR4)</label>
+                    <input type="text" id="ticker" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 uppercase" placeholder="PETR4" required>
+                </div>
+                <div>
+                    <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
+                    <input type="date" id="date" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+
+                <!-- Fields for Buy/Sell -->
+                <div id="buy-sell-fields">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">Quantidade</label>
+                            <input type="number" id="quantity" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="100" min="1" step="1">
+                        </div>
+                        <div>
+                            <label for="price" class="block text-sm font-medium text-gray-700 mb-1">Preço Unitário</label>
+                            <input type="number" id="price" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="35.50" min="0.01" step="0.01">
+                        </div>
+                        <div>
+                            <label for="brokerage" class="block text-sm font-medium text-gray-700 mb-1">Corretagem</label>
+                            <input type="number" id="brokerage" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="2.50" min="0" step="0.01">
+                        </div>
+                        <div>
+                            <label for="otherFees" class="block text-sm font-medium text-gray-700 mb-1">Outras Taxas</label>
+                            <input type="number" id="otherFees" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="0.15" min="0" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Field for Dividend -->
+                <div id="dividend-field" class="hidden">
+                    <label for="proventoValue" class="block text-sm font-medium text-gray-700 mb-1">Valor do Provento</label>
+                    <input type="number" id="proventoValue" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="150.75" min="0.01" step="0.01">
+                </div>
+
+                <div class="md:col-span-2 lg:col-span-3 flex justify-center">
+                    <button type="submit" class="mt-4 w-full md:w-auto bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-md shadow-lg transition-all duration-300 transform hover:scale-105">
+                        Registrar
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Portfolio Summary -->
+        <div class="bg-white p-6 rounded-lg shadow-xl mb-8">
+            <h2 class="text-2xl font-semibold text-green-600 mb-4">Portfólio Atual</h2>
+            <div id="portfolio-summary" class="overflow-x-auto">
+                <!-- Table will be generated by JS -->
+            </div>
+        </div>
+
+        <!-- Dividends Summary -->
+        <div class="bg-white p-6 rounded-lg shadow-xl mb-8">
+            <h2 class="text-2xl font-semibold text-purple-600 mb-4">Proventos Recebidos</h2>
+            <p class="text-lg text-gray-700">Total de Proventos: <span id="total-dividends" class="font-bold text-purple-700">R$ 0.00</span></p>
+            <div id="dividends-summary" class="overflow-x-auto mt-4">
+                <!-- Table will be generated by JS -->
+            </div>
+        </div>
+
+        <!-- Operations History -->
+        <div class="bg-white p-6 rounded-lg shadow-xl">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Histórico de Operações</h2>
+            <div id="operations-history" class="overflow-x-auto">
+                <!-- Table will be generated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application Script -->
+    <script src="script.js"></script>
+</body>
+</html>

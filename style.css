@@ -1,0 +1,45 @@
+/* Sets the Inter font for the whole application */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Styles for the modal message box overlay */
+.message-box-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+/* Styles for the modal message box itself */
+.message-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    max-width: 90%;
+    width: 400px;
+    border: 1px solid;
+}
+
+/* Specific border colors for success and error messages */
+.message-box.success {
+    border-color: #34D399; /* Tailwind green-400 */
+}
+
+.message-box.error {
+    border-color: #EF4444; /* Tailwind red-500 */
+}
+
+/* Utility class to hide elements */
+.hidden {
+    display: none;
+}
